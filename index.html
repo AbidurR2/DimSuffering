@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DimSuffering - Share Your Story</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: #1a1a2e;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .map-container {
+        position: relative;
+        width: 100%;
+        height: 100vh; /* Full height */
+        background-image: url("blue-and-black-minimalist-world-map.jpg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        overflow: hidden; /* Ensure no overflow */
+      }
+
+      .story-point {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: radial-gradient(
+          circle,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(255, 255, 255, 0.4) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+        }
+      }
+
+      .story-popup {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.95);
+        color: #000;
+        padding: 1rem;
+        border-radius: 8px;
+        max-width: 300px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        display: none;
+        z-index: 1000;
+      }
+
+      .add-story-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        padding: 1rem 2rem;
+        background: #4a4a8a;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background 0.3s;
+      }
+
+      .add-story-btn:hover {
+        background: #5a5a9a;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+      }
+
+      .modal-content {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        color: #000;
+      }
+
+      .modal-content textarea {
+        width: 100%;
+        height: 150px;
+        margin: 1rem 0;
+        padding: 0.5rem;
+      }
+
+      .modal-content button {
+        padding: 0.5rem 1rem;
+        margin: 0.5rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>DimSuffering</h1>
+      <p>Share your story, connect with others, and spread awareness</p>
+    </header>
+
+    <div class="map-container"></div>
+
+    <button class="add-story-btn">Share Your Story</button>
+
+    <div class="modal">
+      <div class="modal-content">
+        <h2>Share Your Story</h2>
+        <textarea placeholder="Share your message with the world..."></textarea>
+        <button onclick="submitStory()">Submit</button>
+        <button onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+    <script>
+      let stories = [
+        {
+          id: 1,
+          lat: 40.7128,
+          lng: -74.006,
+          message: "Struggling with medical bills after losing my job.",
+        },
+        {
+          id: 2,
+          lat: 51.5074,
+          lng: -0.1278,
+          message: "Looking for support dealing with mental health challenges.",
+        },
+        {
+          id: 3,
+          lat: -33.8688,
+          lng: 151.2093,
+          message: "Seeking advice for starting over in a new city.",
+        },
+        {
+          id: 4,
+          lat: 35.6895,
+          lng: 139.6917,
+          message: "Dealing with loneliness and cultural adjustment.",
+        },
+        {
+          id: 5,
+          lat: -22.9068,
+          lng: -43.1729,
+          message: "Facing job insecurity in the current economic climate.",
+        },
+        {
+          id: 6,
+          lat: 55.7558,
+          lng: 37.6173,
+          message: "Looking for a community to discuss creative projects.",
+        },
+        {
+          id: 7,
+          lat: 19.076,
+          lng: 72.8777,
+          message: "Balancing family expectations and personal ambitions.",
+        },
+        {
+          id: 8,
+          lat: -1.2864,
+          lng: 36.8172,
+          message: "Finding ways to support local mental health initiatives.",
+        },
+        {
+          id: 9,
+          lat: 48.8566,
+          lng: 2.3522,
+          message: "Adjusting to life after a major life change.",
+        },
+        {
+          id: 10,
+          lat: 34.0522,
+          lng: -118.2437,
+          message: "Looking for support with work-life balance.",
+        },
+      ];
+
+      function initializeStoryPoints() {
+        stories.forEach((story) => {
+          createStoryPoint(story);
+        });
+      }
+
+      function createStoryPoint(story) {
+        const point = document.createElement("div");
+        point.className = "story-point";
+        const x = (story.lng + 180) * (window.innerWidth / 360);
+        const y = (90 - story.lat) * (window.innerHeight / 180);
+        point.style.left = `${x}px`;
+        point.style.top = `${y}px`;
+        point.addEventListener("mouseover", () => showStoryPopup(story, point));
+        point.addEventListener("mouseout", hideStoryPopup);
+        document.querySelector(".map-container").appendChild(point);
+      }
+
+      function showStoryPopup(story, element) {
+        const popup = document.createElement("div");
+        popup.className = "story-popup";
+        popup.textContent = story.message;
+        popup.style.left = element.style.left;
+        popup.style.top = `${parseInt(element.style.top) - 60}px`;
+        document.querySelector(".map-container").appendChild(popup);
+        popup.style.display = "block";
+      }
+
+      function hideStoryPopup() {
+        const popup = document.querySelector(".story-popup");
+        if (popup) popup.remove();
+      }
+
+      document.querySelector(".add-story-btn").addEventListener("click", () => {
+        document.querySelector(".modal").style.display = "flex";
+      });
+
+      function closeModal() {
+        document.querySelector(".modal").style.display = "none";
+      }
+
+      function submitStory() {
+        const message = document.querySelector(".modal-content textarea").value;
+        if (message.trim()) {
+          const newStory = {
+            id: stories.length + 1,
+            lat: Math.random() * 80 - 40,
+            lng: Math.random() * 360 - 180,
+            message: message,
+          };
+          stories.push(newStory);
+          createStoryPoint(newStory);
+          closeModal();
+        }
+      }
+
+      initializeStoryPoints();
+    </script>
+  </body>
+</html>
